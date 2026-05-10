@@ -2,7 +2,7 @@ name: Deploy Catalogos to GHCR
 on:
   push:
     branches: [ main ]
-permissions: # Necesario para escribir en GitHub Packages
+permissions:
   packages: write
   contents: read
 jobs:
@@ -10,12 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Login to GitHub Container Registry
+      - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Build and Push
         run: |
-          # Convertimos el nombre a minúsculas para evitar errores de Docker
-          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/api-catalogos:latest
+          # Esto convierte tu usuario ELIZAN626 a elizan626
+          REPO_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE_ID=ghcr.io/$REPO_LOWER/api-catalogos:latest
           docker build -t $IMAGE_ID .
           docker push $IMAGE_ID
       - name: Deploy to EC2
@@ -25,9 +26,9 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Login en la EC2 para poder bajar la imagen
+            REPO_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
             echo "${{ secrets.GH_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker stop api-catalogos || true
             docker rm api-catalogos || true
-            docker pull ghcr.io/${{ github.repository_owner }}/api-catalogos:latest
-            docker run -d --name api-catalogos -p 8000:8000 ghcr.io/${{ github.repository_owner }}/api-catalogos:latest
+            docker pull ghcr.io/$REPO_LOWER/api-catalogos:latest
+            docker run -d --name api-catalogos -p 8000:8000 ghcr.io/$REPO_LOWER/api-catalogos:latest
