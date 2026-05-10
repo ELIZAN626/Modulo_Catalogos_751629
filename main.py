@@ -98,7 +98,10 @@ def listar_clientes():
 @app.post("/domicilios", status_code=201, response_model=Domicilio)
 def crear_domicilio(domicilio: DomicilioBase):
     if not _get_item(CLIENTES_TABLE, {'id': domicilio.id_cliente}):
-        raise HTTPException(status_code=400, detail="el cliente no existe")
+        raise HTTPException(
+            status_code=404,
+            detail=f"No existe un cliente con id '{domicilio.id_cliente}'.",
+        )
     nuevo = Domicilio(**domicilio.dict())
     _put_item(DOMICILIOS_TABLE, nuevo.dict())
     return nuevo
